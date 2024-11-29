@@ -7,17 +7,18 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    AppFooter: typeof import('./src/components/app/AppFooter.vue')['default']
-    AppFotter: typeof import('./src/components/app/AppFotter.vue')['default']
     AppLayout: typeof import('./src/components/app/AppLayout.vue')['default']
     AppMenu: typeof import('./src/components/app/AppMenu.vue')['default']
     AppMenuItem: typeof import('./src/components/app/AppMenuItem.vue')['default']
     AppSidebar: typeof import('./src/components/app/AppSidebar.vue')['default']
     AppTopbar: typeof import('./src/components/app/AppTopbar.vue')['default']
     Button: typeof import('primevue/button')['default']
+    Column: typeof import('primevue/column')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
+    NiCard: typeof import('./src/components/ui/NiCard.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Toast: typeof import('primevue/toast')['default']
+    TreeTable: typeof import('primevue/treetable')['default']
   }
 }

@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  <div class="layout-sidebar">
+  <div class="layout-sidebar border">
     <app-menu />
   </div>
 </template>
