@@ -9,9 +9,19 @@ import App from './App.vue'
 import "./assets/main.css";
 import "primeicons/primeicons.css";
 
+import { createRouter, createWebHistory } from 'vue-router'
+import { routes } from 'vue-router/auto-routes'
+
+const router = createRouter({
+    history: createWebHistory(),
+    // pass the generated routes written by the plugin 🤖
+    routes,
+  })
+
 const app = createApp(App)
 
 app
+    .use(router)
     .use(PrimeVue, {
         theme: {
             preset: Aura
