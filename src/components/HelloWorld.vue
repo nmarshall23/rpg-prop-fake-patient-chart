@@ -19,10 +19,7 @@ const count = ref(0);
 
 <template>
     <div class="greetings">
-        <Toast />
-
         <h3>
-            <a href="https://vitejs.dev/" target="_blank" rel="noopener">Vite</a> +
             <a href="https://vuejs.org/" target="_blank" rel="noopener">Vue 3</a> +
             <a href="https://primevue.org/" target="_blank" rel="noopener">PrimeVue</a>.
         </h3>

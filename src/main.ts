@@ -6,8 +6,9 @@ import ToastService from "primevue/toastservice";
 
 import App from './App.vue'
 
-import "./assets/main.css";
-import "primeicons/primeicons.css";
+import "@/assets/main.scss";
+import '@/assets/tailwind.css';
+
 
 import { createRouter, createWebHistory } from 'vue-router'
 import { routes } from 'vue-router/auto-routes'
