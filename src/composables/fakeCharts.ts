@@ -5,7 +5,7 @@ export function useFakeCharts() {
 
     function getPatientCharts() {
 
-        return [...Array(10).keys()].map((value) => {
+        return [...Array(60).keys()].map((value) => {
             const gender = rand<"male" | "female">(['male', 'female'])
             return {
                 key: `${value}`,
