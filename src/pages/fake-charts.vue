@@ -18,7 +18,7 @@ async function downloadPDF() {
 
   // const linkSource = `data:application/pdf;base64,${content}`;
   const downloadLink = document.createElement('a');
-  document.body.appendChild(downloadLink);
+  // document.body.appendChild(downloadLink);
 
   downloadLink.href = content;
   downloadLink.target = '_self';
