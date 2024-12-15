@@ -9,9 +9,11 @@ import eslint from '@nabla/vite-plugin-eslint';
 
 import Components from 'unplugin-vue-components/vite'
 import { PrimeVueResolver } from '@primevue/auto-import-resolver'
+import { ghPages } from "vite-plugin-gh-pages"
 
 // https://vite.dev/config/
 export default defineConfig({
+  // base: "/rpg-props-fake-docs/",
   plugins: [
     VueRouter({
       /* options */
@@ -23,6 +25,7 @@ export default defineConfig({
       ]
     }),
     eslint(),
+    ghPages(),
   ],
   resolve: {
     alias: {

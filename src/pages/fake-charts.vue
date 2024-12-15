@@ -6,7 +6,6 @@ import {useFakeChartsPdf} from '@/composables/fakeChartsPdf';
 const {getPatientCharts} = useFakeCharts();
 
 const treeTableValue = ref(null);
-const selectedTreeTableValue = ref(null);
 
 onBeforeMount(() => {
   treeTableValue.value = getPatientCharts();
@@ -14,7 +13,7 @@ onBeforeMount(() => {
 
 async function downloadPDF() {
   const content = await useFakeChartsPdf();
-  const fileName = "Doc.pdf"
+  const fileName = 'Doc.pdf';
 
   // const linkSource = `data:application/pdf;base64,${content}`;
   const downloadLink = document.createElement('a');
@@ -25,6 +24,11 @@ async function downloadPDF() {
   downloadLink.download = fileName;
   downloadLink.click();
 }
+
+const showChartConfig = ref(false);
+
+const products = ref();
+const expandedRows = ref({});
 </script>
 
 <template>
@@ -36,9 +40,43 @@ async function downloadPDF() {
     </template>
 
     <template #icons>
-      <Button icon="pi pi-cog" severity="secondary" rounded text />
+      <Button
+        icon="pi pi-cog"
+        severity="secondary"
+        rounded
+        text
+        @click="showChartConfig = true"
+      />
     </template>
-    <TreeTable
+
+    <DataTable v-model:expandedRows="expandedRows" :value="treeTableValue" dataKey="id"
+         tableStyle="min-width: 60rem">
+    
+    <Column expander style="width: 5rem" />
+    <Column field="name" header="Name"></Column>
+ 
+    <Column field="price" header="Price">
+        <template #body="slotProps">
+            
+        </template>
+    </Column>
+    <Column field="category" header="Category"></Column>
+    <Column field="rating" header="Reviews">
+        <template #body="slotProps">
+            <Rating :modelValue="slotProps.data.rating" readonly />
+        </template>
+    </Column>
+    <Column header="Status">
+        <template #body="slotProps">
+            <Tag :value="slotProps.data.inventoryStatus"  />
+        </template>
+    </Column>
+    <template #expansion="slotProps">
+        
+    </template>
+</DataTable>
+    
+    <!-- <TreeTable
       :value="treeTableValue"
       :paginator="true"
       :rows="10"
@@ -50,7 +88,6 @@ async function downloadPDF() {
       <Column field="age" header="Age"></Column>
 
       <template #paginatorstart>
-        <Button type="button" icon="pi pi-refresh" text />
         <Button
           icon="pi pi-download"
           severity="secondary"
@@ -60,6 +97,19 @@ async function downloadPDF() {
           @click="downloadPDF"
         />
       </template>
-    </TreeTable>
+    </TreeTable> -->
+    <Drawer
+      v-model:visible="showChartConfig"
+      header="Bottom Drawer"
+      position="bottom"
+      style="height: auto"
+    >
+      <p>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+        tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+        veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
+        commodo consequat.
+      </p>
+    </Drawer>
   </panel>
 </template>

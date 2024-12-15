@@ -25,7 +25,7 @@ async function createPDF() {
 
 function logFormFields(form: PDFForm) {
     const fields = form.getFields()
-    
+
     console.group(`Get Form Fields count ${fields.length}`)
     fields.forEach(field => {
         const type = field.constructor.name
@@ -43,27 +43,31 @@ async function getFont(pdfDoc: PDFDocument, fontUrl: string) {
 
 function isPDFArray(obj: PDFObject | undefined): obj is PDFArray {
     return obj !== undefined && (obj as PDFArray).asRectangle !== undefined
-    
+
 }
 
-function fillInSectionWithFont(pdfDoc: PDFDocument, font: PDFFont,  inputField: PDFTextField) {
+function fillInSectionWithFont(pdfDoc: PDFDocument, font: PDFFont, fontSize: number, inputField: PDFTextField, text: string) {
     const rect = inputField.acroField.dict.get(PDFName.of("Rect"))
-    
+
     if (isPDFArray(rect)) {
         const r = rect.asRectangle()
 
         const page = pdfDoc.getPage(0)
-        
-        const fontSize = 32
-        page.drawText('Creating PDFs in JavaScript is awesome!', {
-            x: r.x,
-            y: (r.y + r.height) - (fontSize / 1.3),
+
+        const w = font.widthOfTextAtSize(text, fontSize / 1.5)
+
+        console.log(`text width ${w}, rect.width ${r.width}, rect.x ${r.x}`)
+
+
+        page.drawText(text, {
+            x: r.x + 1 + (Math.random() * 6),
+            y: (r.y + r.height) - (fontSize / 1.3) - (Math.random() * 6),
             size: fontSize,
             font,
         })
     }
 
-    
+
 }
 
 export async function useFakeChartsPdf() {
@@ -83,13 +87,11 @@ export async function useFakeChartsPdf() {
 
     const notesField = form.getTextField('notes')
 
-    
+
     const handWrittenFont = await getFont(pdfDoc, '/Zeyada-Regular.ttf')
 
 
-    fillInSectionWithFont(pdfDoc, handWrittenFont, notesField)
-
-
+    fillInSectionWithFont(pdfDoc, handWrittenFont, 32, notesField, "Creating PDFs in JavaScript \nis awesome!")
 
 
     const pdfDataUri = await pdfDoc.saveAsBase64({ dataUri: true });

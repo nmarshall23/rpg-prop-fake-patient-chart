@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from 'vue';
 import {useLayout} from '@/composables/layout';
-import { useEventListener } from '@vueuse/core'
 
 const {layoutState, isSidebarActive, resetMenu } = useLayout();
 
@@ -67,5 +66,5 @@ function isOutsideClicked(event) {
     </div>
     <div class="layout-mask animate-fadein"></div>
   </div>
-  <Toast />
+  
 </template>
