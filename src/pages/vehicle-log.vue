@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import {onMounted, ref} from 'vue';
-import {rand, randBetweenDate, randBoolean} from '@ngneat/falso';
+import {
+  rand,
+  randBetweenDate,
+  randBoolean,
+  randFullName,
+  randNumber,
+  randRecentDate,
+  randSequence,
+  randVehicle,
+} from '@ngneat/falso';
 import {useToggle} from '@vueuse/core';
 import {useDownloadPDF} from '../composables/downloadPDF';
 import {PDFForm} from 'pdf-lib';
@@ -15,10 +24,18 @@ const vehicleLogSettings = ref<VehicleLogSettings>({
     maxDailyTrips: 5,
     minDailyTrips: 1,
     dailyTrips: [1, 2],
-    range: [new Date(), new Date()],
+    range: [randRecentDate({days: 10}), new Date()],
     includeWeekends: false,
   },
+  time: {
+    start: new Date(),
+    end: new Date(),
+  },
   drivers: [],
+  vehicle: {
+    description: '',
+    id: '',
+  },
 });
 
 const vehicleLogTable = ref<Array<VehicleLogEntry>>([]);
@@ -27,15 +44,19 @@ const [isVisibleConfig, toggleConfigVisible] = useToggle();
 /* === PAGE LIFECYCLE === */
 
 onMounted(() => {
-  genLogBookPage()
-})
+  genLogBookPage();
+});
 
 /* === RandGenFunc === */
 
 function genRandVehicleLogEntry(value: number): VehicleLogEntry {
   return {
     key: `${value}`,
-    dateTime: randBetweenDate({from: new Date('10/07/2020'), to: new Date()}),
+    dateTime: randBetweenDate({
+      from: vehicleLogSettings.value.date.range[0],
+      to: vehicleLogSettings.value.date.range[1],
+    }),
+
     refueled: randBoolean(),
     destinations: rand(['THis', 'That', 'There']),
     driver: rand(['Foo', 'bar']),
@@ -43,8 +64,36 @@ function genRandVehicleLogEntry(value: number): VehicleLogEntry {
 }
 
 function genLogBookPage() {
-  vehicleLogTable.value = [...Array(vehicleLogSettings.value.numberOfRecords).keys()]
-    .map(v => genRandVehicleLogEntry(v))
+  vehicleLogTable.value = [
+    ...Array(vehicleLogSettings.value.numberOfRecords).keys(),
+  ].map(v => genRandVehicleLogEntry(v));
+
+  if (vehicleLogSettings.value.vehicle.description === '') {
+    vehicleLogSettings.value.vehicle.description = randVehicle();
+  }
+
+  if (vehicleLogSettings.value.vehicle.id === '') {
+    const letters = randSequence({size: 2, chars: 'AZXTVHCW'});
+    const num = Intl.NumberFormat('en-US', {minimumIntegerDigits: 3}).format(
+      randNumber({min: 1, max: 20}),
+    );
+    vehicleLogSettings.value.vehicle.id = `${letters}-${num}`
+  }
+
+  if (vehicleLogSettings.value.drivers.length === 0) {
+
+    const d1 = {
+      name: randFullName({ withAccents: false }),
+      chance: randNumber({ min: 20, max: 60 })
+    }
+
+    const d2 = {
+      name: randFullName({ withAccents: false }),
+      chance: 100 - d1.chance
+    }
+
+    vehicleLogSettings.value.drivers = [d1, d2]
+  }
 }
 
 /* === PDF Functions === */
@@ -158,6 +207,9 @@ const formatDateTime = (date: Date) => {
     position="bottom"
     style="height: auto"
   >
-    <VehicleLogSettingsDrawer v-model="vehicleLogSettings" @regenerateLogBook="genLogBookPage" />
+    <VehicleLogSettingsDrawer
+      v-model="vehicleLogSettings"
+      @regenerateLogBook="genLogBookPage"
+    />
   </Drawer>
 </template>
