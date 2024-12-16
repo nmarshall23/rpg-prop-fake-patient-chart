@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import {randNumber, randSequence, randVehicle} from '@ngneat/falso';
+import {randFullName, randNumber, randSequence, randVehicle} from '@ngneat/falso';
 import {VehicleLogSettings} from '../../vite-env';
 import {ref} from 'vue';
+import { faker } from '@faker-js/faker';
 
 const vehicleLogSettings = defineModel<VehicleLogSettings>({
   required: true,
@@ -40,6 +41,23 @@ function updateVehicleId() {
     randNumber({min: 1, max: 20}),
   );
   vehicleLogSettings.value.vehicle.id = `${letters}-${num}`;
+}
+
+function addDriver() {
+    
+    const d1 = {
+      firstName: faker.person.firstName(),
+      lastName: faker.person.lastName(),
+      randWeight: faker.number.int({ min: 5, max: 20, multipleOf: 5 }) 
+    };
+
+    vehicleLogSettings.value.drivers.push(d1)
+}
+
+function deleteDriver(index: number) {
+    const filteredList = vehicleLogSettings.value.drivers.filter((_v, i) => i != index)
+
+    vehicleLogSettings.value.drivers = filteredList
 }
 
 const fieldsetContentPt = ref({
@@ -251,12 +269,19 @@ const fieldsetContentPt = ref({
       <template #header>
         <div class="flex flex-wrap items-center justify-between gap-2">
             <span class="text-xl font-bold">Drivers </span>
-            <Button icon="pi pi-plus" rounded raised  />
+            <Button icon="pi pi-plus" rounded raised @click="addDriver()" />
         </div>
     </template>
 
-        <Column field="name" header="Name"></Column>
-        <Column field="chance" header="Probability"  ></Column>
+        <Column :field="(p) => `${p.firstName} ${p.lastName}`" header="Name">
+        </Column>
+        <Column field="randWeight" header="Probability"  ></Column>
+        <Column :exportable="false" style="min-width: 12rem">
+        <template #body="slotProps">
+            <Button icon="pi pi-trash" outlined rounded severity="danger" @click="deleteDriver(slotProps.index)" />
+        </template>
+    </Column>
+
       </DataTable>
     </Fieldset>
   </div>
@@ -266,8 +291,9 @@ const fieldsetContentPt = ref({
 .settingsContainer {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-rows: min-content 1fr;
   gap: 1rem 2rem;
+  align-items: start;
 }
 
 .FieldsetPage {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, ref} from 'vue';
+import {computed, onMounted, ref} from 'vue';
 import {
   rand,
   randBetweenDate,
@@ -16,6 +16,7 @@ import {PDFForm} from 'pdf-lib';
 import {useFillPdf} from '../composables/useFillPdf';
 import type {VehicleLogEntry, VehicleLogSettings} from '../vite-env.d.ts';
 import VehicleLogSettingsDrawer from '../components/vehicleLog/vehicleLogSettingsDrawer.vue';
+import { faker } from '@faker-js/faker';
 
 // === PAGE REFs === //
 const vehicleLogSettings = ref<VehicleLogSettings>({
@@ -49,6 +50,10 @@ onMounted(() => {
 
 /* === RandGenFunc === */
 
+const weightedDrivers = computed(() => {
+  return vehicleLogSettings.value.drivers.map((v) => ({ weight: v.randWeight, value: `${v.firstName} ${v.lastName}`}))
+})
+
 function genRandVehicleLogEntry(value: number): VehicleLogEntry {
   return {
     key: `${value}`,
@@ -59,14 +64,12 @@ function genRandVehicleLogEntry(value: number): VehicleLogEntry {
 
     refueled: randBoolean(),
     destinations: rand(['THis', 'That', 'There']),
-    driver: rand(['Foo', 'bar']),
+    driver: faker.helpers.weightedArrayElement(weightedDrivers.value),
   };
 }
 
 function genLogBookPage() {
-  vehicleLogTable.value = [
-    ...Array(vehicleLogSettings.value.numberOfRecords).keys(),
-  ].map(v => genRandVehicleLogEntry(v));
+  
 
   if (vehicleLogSettings.value.vehicle.description === '') {
     vehicleLogSettings.value.vehicle.description = randVehicle();
@@ -77,23 +80,28 @@ function genLogBookPage() {
     const num = Intl.NumberFormat('en-US', {minimumIntegerDigits: 3}).format(
       randNumber({min: 1, max: 20}),
     );
-    vehicleLogSettings.value.vehicle.id = `${letters}-${num}`
+    vehicleLogSettings.value.vehicle.id = `${letters}-${num}`;
   }
 
   if (vehicleLogSettings.value.drivers.length === 0) {
-
     const d1 = {
-      name: randFullName({ withAccents: false }),
-      chance: randNumber({ min: 20, max: 60 })
-    }
+      firstName: faker.person.firstName(),
+      lastName: faker.person.lastName(),
+      randWeight: faker.number.int({ min: 5, max: 20, multipleOf: 5 }) 
+    };
 
     const d2 = {
-      name: randFullName({ withAccents: false }),
-      chance: 100 - d1.chance
-    }
+      firstName: faker.person.firstName(),
+      lastName: faker.person.lastName(),
+      randWeight: faker.number.int({ min: 5, max: 20, multipleOf: 5 }) 
+    };
 
-    vehicleLogSettings.value.drivers = [d1, d2]
+    vehicleLogSettings.value.drivers = [d1, d2];
   }
+
+  vehicleLogTable.value = [
+    ...Array(vehicleLogSettings.value.numberOfRecords).keys(),
+  ].map(v => genRandVehicleLogEntry(v));
 }
 
 /* === PDF Functions === */
@@ -101,6 +109,14 @@ function genLogBookPage() {
 const {fillSinglePagePdfForm} = useFillPdf();
 
 function fillFormFunc(form: PDFForm, data: Array<VehicleLogEntry>) {
+  const vDesc = form.getTextField('vehicleDescription');
+  vDesc.setText(vehicleLogSettings.value.vehicle.description);
+  vDesc.enableReadOnly();
+
+  const vId = form.getTextField('vehicleId');
+  vId.setText(vehicleLogSettings.value.vehicle.id);
+  vId.enableReadOnly();
+
   data.forEach((v, idx) => {
     if (idx > 20) {
       return;
@@ -112,7 +128,11 @@ function fillFormFunc(form: PDFForm, data: Array<VehicleLogEntry>) {
     const destField = form.getTextField(`Destinations${idxP}`);
     const driverField = form.getTextField(`driver${idxP}`);
 
-    dateField.setText(v.dateTime.toISOString());
+    dateField.setText(
+      new Intl.DateTimeFormat('en-US', dateTimeOptions.value).format(
+        v.dateTime,
+      ),
+    );
     if (v.refueled) {
       fField.check();
     }
@@ -129,7 +149,7 @@ function fillFormFunc(form: PDFForm, data: Array<VehicleLogEntry>) {
 const {createDownload} = useDownloadPDF<Array<VehicleLogEntry>>(
   'VehicleLog',
   vehicleLogTable,
-  data => fillSinglePagePdfForm('/VehicleLog.pdf', false, data, fillFormFunc),
+  data => fillSinglePagePdfForm('/VehicleLog.pdf', true, data, fillFormFunc),
 );
 
 /* === Table Functions === */

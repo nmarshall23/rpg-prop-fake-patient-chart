@@ -2,8 +2,9 @@
 /// <reference types="unplugin-vue-router/client" />
 
 interface VehicleLogDriver {
-    name: string,
-    chance: number
+    firstName: string,
+    lastName: string
+    randWeight: number
 }
 
 export interface VehicleLogSettings {
