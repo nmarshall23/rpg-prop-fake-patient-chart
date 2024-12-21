@@ -30,9 +30,18 @@ function logFormFields(form: PDFForm) {
     console.groupEnd()
 }
 
+function setFormFieldsReadonly(form: PDFForm) {
+    const fields = form.getFields()
+
+    fields.forEach(field => {
+        field.enableReadOnly()
+    })
+}
+
 export function useFillPdf() {
 
     return {
         fillSinglePagePdfForm,
+        setFormFieldsReadonly,
     }
 }

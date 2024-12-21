@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import {randFullName, randNumber, randSequence, randVehicle} from '@ngneat/falso';
+import {randNumber, randSequence, randVehicle} from '@ngneat/falso';
 import {VehicleLogSettings} from '../../vite-env';
 import {ref} from 'vue';
-import { faker } from '@faker-js/faker';
+import {faker} from '@faker-js/faker';
+import {useFakerUtils} from '../../composables/useFakerUtils';
 
 const vehicleLogSettings = defineModel<VehicleLogSettings>({
   required: true,
@@ -24,6 +25,7 @@ const vehicleLogSettings = defineModel<VehicleLogSettings>({
       description: '',
       id: '',
     },
+    destinations: [],
   },
 });
 
@@ -32,7 +34,7 @@ const emit = defineEmits<{
 }>();
 
 function updateVehicleDesc() {
-  vehicleLogSettings.value.vehicle.description = randVehicle();
+  vehicleLogSettings.value.vehicle.description = faker.vehicle.vehicle()
 }
 
 function updateVehicleId() {
@@ -43,26 +45,38 @@ function updateVehicleId() {
   vehicleLogSettings.value.vehicle.id = `${letters}-${num}`;
 }
 
-function addDriver() {
-    
-    const d1 = {
-      firstName: faker.person.firstName(),
-      lastName: faker.person.lastName(),
-      randWeight: faker.number.int({ min: 5, max: 20, multipleOf: 5 }) 
-    };
+const {createStreetAddress, createDriver} = useFakerUtils();
 
-    vehicleLogSettings.value.drivers.push(d1)
+function addDriver() {
+  const d1 = createDriver();
+
+  vehicleLogSettings.value.drivers.push(d1);
 }
 
 function deleteDriver(index: number) {
-    const filteredList = vehicleLogSettings.value.drivers.filter((_v, i) => i != index)
+  const filteredList = vehicleLogSettings.value.drivers.filter(
+    (_v, i) => i != index,
+  );
 
-    vehicleLogSettings.value.drivers = filteredList
+  vehicleLogSettings.value.drivers = filteredList;
 }
 
 const fieldsetContentPt = ref({
   content: {class: 'flex gap-3 mt-2'},
 });
+
+function addDest() {
+  const c = createStreetAddress();
+  vehicleLogSettings.value.destinations.push(c);
+}
+
+function deleteDest(index: number) {
+  const filteredList = vehicleLogSettings.value.destinations.filter(
+    (_v, i) => i != index,
+  );
+
+  vehicleLogSettings.value.destinations = filteredList;
+}
 </script>
 
 <template>
@@ -244,20 +258,33 @@ const fieldsetContentPt = ref({
     </Fieldset>
 
     <Fieldset legend="Vehicle Logbook - Destinations">
-      <div class="flex-auto">
-        <label for="Description" class="font-bold block mb-2">
-          Vehicle Type
-        </label>
-        <InputGroup inputId="Description">
-          <InputGroupAddon>
-            <Button icon="pi pi-check" severity="secondary" />
-          </InputGroupAddon>
-          <InputText />
-          <InputGroupAddon>
-            <Button icon="pi pi-times" severity="secondary" />
-          </InputGroupAddon>
-        </InputGroup>
-      </div>
+      <DataTable
+        :value="vehicleLogSettings.destinations"
+        size="small"
+        tableStyle="min-width: 30rem"
+      >
+        <template #header>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="text-xl font-bold">Destinations </span>
+            <Button icon="pi pi-plus" rounded raised @click="addDest()" />
+          </div>
+        </template>
+
+        <Column :field="p => `${p.name}`" header="Name"> </Column>
+
+        <Column field="randWeight" header="Probability"></Column>
+        <Column :exportable="false" style="min-width: 12rem">
+          <template #body="slotProps">
+            <Button
+              icon="pi pi-trash"
+              outlined
+              rounded
+              severity="danger"
+              @click="deleteDest(slotProps.index)"
+            />
+          </template>
+        </Column>
+      </DataTable>
     </Fieldset>
 
     <Fieldset legend="Vehicle Logbook - Drivers">
@@ -266,22 +293,27 @@ const fieldsetContentPt = ref({
         size="small"
         tableStyle="min-width: 30rem"
       >
-      <template #header>
-        <div class="flex flex-wrap items-center justify-between gap-2">
+        <template #header>
+          <div class="flex flex-wrap items-center justify-between gap-2">
             <span class="text-xl font-bold">Drivers </span>
             <Button icon="pi pi-plus" rounded raised @click="addDriver()" />
-        </div>
-    </template>
-
-        <Column :field="(p) => `${p.firstName} ${p.lastName}`" header="Name">
-        </Column>
-        <Column field="randWeight" header="Probability"  ></Column>
-        <Column :exportable="false" style="min-width: 12rem">
-        <template #body="slotProps">
-            <Button icon="pi pi-trash" outlined rounded severity="danger" @click="deleteDriver(slotProps.index)" />
+          </div>
         </template>
-    </Column>
 
+        <Column :field="p => `${p.firstName} ${p.lastName}`" header="Name">
+        </Column>
+        <Column field="randWeight" header="Probability"></Column>
+        <Column :exportable="false" style="min-width: 12rem">
+          <template #body="slotProps">
+            <Button
+              icon="pi pi-trash"
+              outlined
+              rounded
+              severity="danger"
+              @click="deleteDriver(slotProps.index)"
+            />
+          </template>
+        </Column>
       </DataTable>
     </Fieldset>
   </div>

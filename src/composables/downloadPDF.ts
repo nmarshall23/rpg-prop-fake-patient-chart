@@ -3,7 +3,6 @@ import { Ref } from "vue";
 
 
 
-
 export function useDownloadPDF<T>(fileName: string, data: Ref<T>, fillPdfFunc: (t: T) => Promise<string>) {
     async function createDownload() {
         console.log('create')
@@ -18,6 +17,8 @@ export function useDownloadPDF<T>(fileName: string, data: Ref<T>, fillPdfFunc: (
         downloadLink.click();
         downloadLink.remove()
     }
+
+
 
     return {
         createDownload

@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import {computed, onMounted, ref} from 'vue';
+import {computed, nextTick, onMounted, ref} from 'vue';
 import {
   rand,
   randBetweenDate,
   randBoolean,
-  randFullName,
   randNumber,
   randRecentDate,
   randSequence,
   randVehicle,
 } from '@ngneat/falso';
-import {useToggle} from '@vueuse/core';
+import {isDefined, useToggle} from '@vueuse/core';
 import {useDownloadPDF} from '../composables/downloadPDF';
 import {PDFForm} from 'pdf-lib';
 import {useFillPdf} from '../composables/useFillPdf';
 import type {VehicleLogEntry, VehicleLogSettings} from '../vite-env.d.ts';
-import VehicleLogSettingsDrawer from '../components/vehicleLog/vehicleLogSettingsDrawer.vue';
-import { faker } from '@faker-js/faker';
+import {faker} from '@faker-js/faker';
+import {useFormatters} from '../composables/useFormatters';
+import {useFakerUtils} from '../composables/useFakerUtils';
 
 // === PAGE REFs === //
 const vehicleLogSettings = ref<VehicleLogSettings>({
@@ -37,10 +37,13 @@ const vehicleLogSettings = ref<VehicleLogSettings>({
     description: '',
     id: '',
   },
+  destinations: [],
 });
 
 const vehicleLogTable = ref<Array<VehicleLogEntry>>([]);
+const pdfEmbed = ref<HTMLEmbedElement>();
 const [isVisibleConfig, toggleConfigVisible] = useToggle();
+const [isVisiblePreview, togglePreviewVisible] = useToggle();
 
 /* === PAGE LIFECYCLE === */
 
@@ -48,29 +51,48 @@ onMounted(() => {
   genLogBookPage();
 });
 
+/* === Formatting === */
+
+const {formatDateTime} = useFormatters();
+
 /* === RandGenFunc === */
 
+const {createStreetAddress, createDriver} = useFakerUtils();
+
 const weightedDrivers = computed(() => {
-  return vehicleLogSettings.value.drivers.map((v) => ({ weight: v.randWeight, value: `${v.firstName} ${v.lastName}`}))
+  return vehicleLogSettings.value.drivers.map(v => ({
+    weight: v.randWeight,
+    value: `${v.firstName} ${v.lastName}`,
+  }));
+});
+
+const weightedDestinations = computed(() => {
+  return vehicleLogSettings.value.destinations.map(v => ({
+    weight: v.randWeight,
+    value: v.name,
+  }));
+});
+
+const fakeDates = computed(() => {
+  return faker.date.betweens({
+      from: vehicleLogSettings.value.date.range[0],
+      to: vehicleLogSettings.value.date.range[1],
+      count: vehicleLogSettings.value.numberOfRecords,
+    })
 })
 
 function genRandVehicleLogEntry(value: number): VehicleLogEntry {
   return {
     key: `${value}`,
-    dateTime: randBetweenDate({
-      from: vehicleLogSettings.value.date.range[0],
-      to: vehicleLogSettings.value.date.range[1],
-    }),
+    dateTime: fakeDates.value[value],
 
     refueled: randBoolean(),
-    destinations: rand(['THis', 'That', 'There']),
+    destinations: faker.helpers.weightedArrayElement(weightedDestinations.value),
     driver: faker.helpers.weightedArrayElement(weightedDrivers.value),
   };
 }
 
 function genLogBookPage() {
-  
-
   if (vehicleLogSettings.value.vehicle.description === '') {
     vehicleLogSettings.value.vehicle.description = randVehicle();
   }
@@ -84,19 +106,14 @@ function genLogBookPage() {
   }
 
   if (vehicleLogSettings.value.drivers.length === 0) {
-    const d1 = {
-      firstName: faker.person.firstName(),
-      lastName: faker.person.lastName(),
-      randWeight: faker.number.int({ min: 5, max: 20, multipleOf: 5 }) 
-    };
+    vehicleLogSettings.value.drivers = [createDriver(), createDriver()];
+  }
 
-    const d2 = {
-      firstName: faker.person.firstName(),
-      lastName: faker.person.lastName(),
-      randWeight: faker.number.int({ min: 5, max: 20, multipleOf: 5 }) 
-    };
-
-    vehicleLogSettings.value.drivers = [d1, d2];
+  if (vehicleLogSettings.value.destinations.length === 0) {
+    vehicleLogSettings.value.destinations = [
+      createStreetAddress(),
+      createStreetAddress(),
+    ];
   }
 
   vehicleLogTable.value = [
@@ -106,7 +123,7 @@ function genLogBookPage() {
 
 /* === PDF Functions === */
 
-const {fillSinglePagePdfForm} = useFillPdf();
+const {fillSinglePagePdfForm, setFormFieldsReadonly} = useFillPdf();
 
 function fillFormFunc(form: PDFForm, data: Array<VehicleLogEntry>) {
   const vDesc = form.getTextField('vehicleDescription');
@@ -128,22 +145,17 @@ function fillFormFunc(form: PDFForm, data: Array<VehicleLogEntry>) {
     const destField = form.getTextField(`Destinations${idxP}`);
     const driverField = form.getTextField(`driver${idxP}`);
 
-    dateField.setText(
-      new Intl.DateTimeFormat('en-US', dateTimeOptions.value).format(
-        v.dateTime,
-      ),
-    );
+    dateField.setText(formatDateTime(v.dateTime));
+
     if (v.refueled) {
       fField.check();
     }
+
     destField.setText(v.destinations);
     driverField.setText(v.driver);
-
-    dateField.enableReadOnly();
-    fField.enableReadOnly();
-    destField.enableReadOnly();
-    driverField.enableReadOnly();
   });
+
+  setFormFieldsReadonly(form);
 }
 
 const {createDownload} = useDownloadPDF<Array<VehicleLogEntry>>(
@@ -152,45 +164,60 @@ const {createDownload} = useDownloadPDF<Array<VehicleLogEntry>>(
   data => fillSinglePagePdfForm('/VehicleLog.pdf', true, data, fillFormFunc),
 );
 
-/* === Table Functions === */
+async function showPreviewDialog() {
+  const pdfDataUri = await fillSinglePagePdfForm(
+    '/VehicleLog.pdf',
+    true,
+    vehicleLogTable.value,
+    fillFormFunc,
+  );
+  console.info('Show PDF preview');
+  togglePreviewVisible(true);
 
-// const onCellEditComplete = (event: Event) => {
-//   let {data, newValue, field} = event;
+  await nextTick();
+  if (isDefined(pdfEmbed.value)) {
+    pdfEmbed.value.src = pdfDataUri;
 
-//   switch (field) {
-//     default:
-//       if (newValue.trim().length > 0) data[field] = newValue;
-//       else event.preventDefault();
-//       break;
-//   }
-// };
-
-const dateTimeOptions = ref({
-  dateStyle: 'short' as const,
-  timeStyle: 'short' as const,
-  hourCycle: 'h24' as const,
-});
-
-const formatDateTime = (date: Date) => {
-  return new Intl.DateTimeFormat('en-US', dateTimeOptions.value).format(date);
-};
+    console.info('Set PDF Embed');
+  }
+}
 </script>
 
 <template>
-  <Panel class="shadow">
+  <Panel
+    class="shadow"
+    :pt="{
+      contentContainer: {
+        style: '--p-panel-content-padding: 0 0 2rem 0',
+      },
+    }"
+  >
     <template #header>
       <span class="text-xl font-semibold">
-        Prop - Vehicle<span class="text-primary text-sky-700">Log</span>
+        <span class="text-primary text-sky-700">Prop</span> - Vehicle<span
+          class="text-primary text-sky-700"
+          >LogBook</span
+        >
+        Page
       </span>
     </template>
     <template #icons>
       <div class="flex items-center justify-between gap-4">
         <Button
+          icon="pi pi-image"
+          severity="Secondary"
+          rounded
+          raised
+          label="Preview PDF"
+          @click="showPreviewDialog()"
+        />
+
+        <Button
           icon="pi pi-download"
           severity="Secondary"
           rounded
           raised
-          label="Download Log"
+          label="Download PDF"
           @click="createDownload()"
         />
 
@@ -205,21 +232,12 @@ const formatDateTime = (date: Date) => {
       </div>
     </template>
 
-    <DataTable :value="vehicleLogTable" tableStyle="min-width: 50rem">
-      <Column field="dateTime" header="Date / Time" style="width: 20%">
-        <template #body="{data, field}">
-          {{ formatDateTime(data[field]) }}
-        </template>
-        <template #editor="{data, field}">
-          <DatePicker v-model="data[field]" />
-        </template>
-      </Column>
-
-      <Column field="refueled" header="Refueled"> </Column>
-
-      <Column field="destinations" header="Destinations"></Column>
-      <Column field="driver" header="Driver"></Column>
-    </DataTable>
+    <Divider />
+    <span class="pl-8"
+      >Vehicle Description: {{ vehicleLogSettings.vehicle.description }} - ID:
+      {{ vehicleLogSettings.vehicle.id }}
+    </span>
+    <VLB-DataTable v-model="vehicleLogTable" />
   </Panel>
   <Drawer
     v-model:visible="isVisibleConfig"
@@ -227,9 +245,18 @@ const formatDateTime = (date: Date) => {
     position="bottom"
     style="height: auto"
   >
-    <VehicleLogSettingsDrawer
+    <VLB-SettingsDrawer
       v-model="vehicleLogSettings"
       @regenerateLogBook="genLogBookPage"
     />
   </Drawer>
+  <Dialog
+    v-model:visible="isVisiblePreview"
+    modal
+    header="Header"
+    :style="{width: '70vw'}"
+    :breakpoints="{'1199px': '75vw', '575px': '90vw'}"
+  >
+    <iframe ref="pdfEmbed" style="width: 100%; height: 400px"></iframe>
+  </Dialog>
 </template>

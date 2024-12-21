@@ -7,6 +7,12 @@ interface VehicleLogDriver {
     randWeight: number
 }
 
+interface VehicleLogDest {
+    name: string
+    randWeight: number
+
+}
+
 export interface VehicleLogSettings {
     numberOfRecords: number;
     date: {
@@ -25,6 +31,7 @@ export interface VehicleLogSettings {
         description: string
         id: string
     }
+    destinations: Array<VehicleLogDest>
 }
 
 export interface VehicleLogEntry {
