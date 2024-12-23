@@ -28,7 +28,7 @@ function createDriver() {
     return d1
 }
 
-function randDateBetween(from: Date, to: Date) {
+function randDateBetween() {
 
 }
 

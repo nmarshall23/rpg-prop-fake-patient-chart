@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import {randNumber, randSequence, randVehicle} from '@ngneat/falso';
+import {randNumber, randSequence} from '@ngneat/falso';
 import {VehicleLogSettings} from '../../vite-env';
 import {ref} from 'vue';
 import {faker} from '@faker-js/faker';
 import {useFakerUtils} from '../../composables/useFakerUtils';
+import {capitalCase} from 'change-case';
 
 const vehicleLogSettings = defineModel<VehicleLogSettings>({
   required: true,
@@ -19,6 +20,10 @@ const vehicleLogSettings = defineModel<VehicleLogSettings>({
     time: {
       start: new Date(),
       end: new Date(),
+      startRandVar: 10,
+      startVar: [],
+      endRandVar: 10,
+      endVar: [],
     },
     drivers: [],
     vehicle: {
@@ -34,7 +39,7 @@ const emit = defineEmits<{
 }>();
 
 function updateVehicleDesc() {
-  vehicleLogSettings.value.vehicle.description = faker.vehicle.vehicle()
+  vehicleLogSettings.value.vehicle.description = faker.vehicle.vehicle();
 }
 
 function updateVehicleId() {
@@ -65,6 +70,10 @@ const fieldsetContentPt = ref({
   content: {class: 'flex gap-3 mt-2'},
 });
 
+const fieldsetContentPtGrid2Cols = ref({
+  content: {class: 'grid grid-cols-2 gap-3 mt-2'},
+});
+
 function addDest() {
   const c = createStreetAddress();
   vehicleLogSettings.value.destinations.push(c);
@@ -77,6 +86,10 @@ function deleteDest(index: number) {
 
   vehicleLogSettings.value.destinations = filteredList;
 }
+
+const timeVarOpt = ref(['before', 'after']);
+
+const fmtCapitalCase = (s: string) => capitalCase(s);
 </script>
 
 <template>
@@ -190,7 +203,7 @@ function deleteDest(index: number) {
       </div>
     </Fieldset>
 
-    <Fieldset legend="Time" :pt="fieldsetContentPt">
+    <Fieldset legend="Delivery Times" :pt="fieldsetContentPtGrid2Cols">
       <FloatLabel variant="on">
         <DatePicker
           v-model="vehicleLogSettings.time.start"
@@ -198,12 +211,13 @@ function deleteDest(index: number) {
           showIcon
           iconDisplay="input"
           timeOnly
+          :step-minute="5"
         >
           <template #inputicon>
             <i class="pi pi-clock" />
           </template>
         </DatePicker>
-        <label for="on_label">Start Time</label>
+        <label for="on_label">First Delivery Time</label>
       </FloatLabel>
 
       <FloatLabel variant="on">
@@ -213,12 +227,61 @@ function deleteDest(index: number) {
           showIcon
           iconDisplay="input"
           timeOnly
+          :step-minute="5"
         >
           <template #inputicon>
             <i class="pi pi-clock" />
           </template>
         </DatePicker>
-        <label for="on_label">End Time</label>
+        <label for="on_label">Last Delivery Time</label>
+      </FloatLabel>
+
+      <FloatLabel variant="over" class="mt-6">
+        <label for="stRandom"> Start Time Variance</label>
+        <InputGroup inputId="stRandom">
+          <InputNumber
+            v-model="vehicleLogSettings.time.startRandVar"
+            suffix=" mins"
+            size="small"
+            :min="0"
+            :max="30"
+            :step="5"
+            showButtons
+          />
+          <InputGroupAddon class="p-0">
+            <SelectButton
+              v-model="vehicleLogSettings.time.startVar"
+              :options="timeVarOpt"
+              multiple
+              size="small"
+              :option-label="fmtCapitalCase"
+            />
+          </InputGroupAddon>
+        </InputGroup>
+      </FloatLabel>
+
+      <FloatLabel variant="over" class="mt-6">
+        <label for="stRandom"> Last Time Variance</label>
+        <InputGroup inputId="stRandom">
+          <InputNumber
+            v-model="vehicleLogSettings.time.endRandVar"
+            suffix=" mins"
+            size="small"
+            :min="0"
+            :max="30"
+            :step="5"
+            showButtons
+          />
+          <InputGroupAddon class="p-0">
+            <SelectButton
+              v-model="vehicleLogSettings.time.endVar"
+              :options="timeVarOpt"
+              multiple
+              size="small"
+              :option-label="fmtCapitalCase"
+            />
+          </InputGroupAddon>
+        </InputGroup>
       </FloatLabel>
     </Fieldset>
 
@@ -270,10 +333,10 @@ function deleteDest(index: number) {
           </div>
         </template>
 
-        <Column :field="p => `${p.name}`" header="Name"> </Column>
+        <Column :field="p => `${p.name}`" header="Name" style="width: 70%;"> </Column>
 
-        <Column field="randWeight" header="Probability"></Column>
-        <Column :exportable="false" style="min-width: 12rem">
+        <Column field="randWeight" header="Probability" style="width: 4rem;"></Column>
+        <Column :exportable="false" style="min-width: 2rem">
           <template #body="slotProps">
             <Button
               icon="pi pi-trash"
@@ -300,10 +363,10 @@ function deleteDest(index: number) {
           </div>
         </template>
 
-        <Column :field="p => `${p.firstName} ${p.lastName}`" header="Name">
+        <Column :field="p => `${p.firstName} ${p.lastName}`" header="Name" style="min-width: 14rem; width: 70%;" >
         </Column>
-        <Column field="randWeight" header="Probability"></Column>
-        <Column :exportable="false" style="min-width: 12rem">
+        <Column field="randWeight" header="Probability" style="width: 4rem;"></Column>
+        <Column :exportable="false" style="width: 2rem">
           <template #body="slotProps">
             <Button
               icon="pi pi-trash"

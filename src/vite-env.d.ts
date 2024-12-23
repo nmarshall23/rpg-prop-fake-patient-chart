@@ -13,6 +13,8 @@ interface VehicleLogDest {
 
 }
 
+type TimeVarianceType = 'before' | 'after'
+
 export interface VehicleLogSettings {
     numberOfRecords: number;
     date: {
@@ -24,7 +26,11 @@ export interface VehicleLogSettings {
     };
     time: {
         start: Date
-        end: Date
+        end: Date,
+        startRandVar: number
+        startVar: TimeVarianceType[]
+        endRandVar: number
+        endVar: TimeVarianceType[]
     }
     drivers: Array<VehicleLogDriver>;
     vehicle: {

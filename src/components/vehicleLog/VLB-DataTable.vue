@@ -7,7 +7,7 @@ import {
 import {VehicleLogEntry} from '../../vite-env';
 import {ref} from 'vue';
 import {useFormatters} from '../../composables/useFormatters';
-import { isDefined } from '@vueuse/core';
+import {isDefined} from '@vueuse/core';
 
 const data = defineModel<Array<VehicleLogEntry>>({
   required: true,
@@ -37,13 +37,12 @@ const onRowReorder = (event: DataTableRowReorderEvent) => {
 };
 
 const onFuelChanged = (e: Event) => {
-  console.log('onFuelChanged %o', e.target)
-  const elem = e.target
+  console.log('onFuelChanged %o', e.target);
+  const elem = e.target;
   if (isDefined(elem)) {
     // (HTMLElement elem)
-    
   }
-}
+};
 
 /* === Formatting === */
 
@@ -91,7 +90,13 @@ const dataTablePt = ref<DataTablePassThroughOptions>({
         />
       </template>
       <template #editor="{data, field}">
-        <Checkbox v-model="data[field]" binary variant="filled" autofocus @change="onFuelChanged"/>
+        <Checkbox
+          v-model="data[field]"
+          binary
+          variant="filled"
+          autofocus
+          @change="onFuelChanged"
+        />
       </template>
     </Column>
 

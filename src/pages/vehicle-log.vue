@@ -31,6 +31,10 @@ const vehicleLogSettings = ref<VehicleLogSettings>({
   time: {
     start: new Date(),
     end: new Date(),
+    startRandVar: 10,
+    startVar: ['after'],
+    endRandVar: 10,
+    endVar: ['after', 'before'],
   },
   drivers: [],
   vehicle: {
@@ -75,11 +79,11 @@ const weightedDestinations = computed(() => {
 
 const fakeDates = computed(() => {
   return faker.date.betweens({
-      from: vehicleLogSettings.value.date.range[0],
-      to: vehicleLogSettings.value.date.range[1],
-      count: vehicleLogSettings.value.numberOfRecords,
-    })
-})
+    from: vehicleLogSettings.value.date.range[0],
+    to: vehicleLogSettings.value.date.range[1],
+    count: vehicleLogSettings.value.numberOfRecords,
+  });
+});
 
 function genRandVehicleLogEntry(value: number): VehicleLogEntry {
   return {
@@ -87,7 +91,9 @@ function genRandVehicleLogEntry(value: number): VehicleLogEntry {
     dateTime: fakeDates.value[value],
 
     refueled: randBoolean(),
-    destinations: faker.helpers.weightedArrayElement(weightedDestinations.value),
+    destinations: faker.helpers.weightedArrayElement(
+      weightedDestinations.value,
+    ),
     driver: faker.helpers.weightedArrayElement(weightedDrivers.value),
   };
 }
@@ -111,6 +117,7 @@ function genLogBookPage() {
 
   if (vehicleLogSettings.value.destinations.length === 0) {
     vehicleLogSettings.value.destinations = [
+      createStreetAddress(),
       createStreetAddress(),
       createStreetAddress(),
     ];
