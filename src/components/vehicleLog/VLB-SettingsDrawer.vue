@@ -11,19 +11,17 @@ const vehicleLogSettings = defineModel<VehicleLogSettings>({
   default: {
     numberOfRecords: 4,
     date: {
-      maxDailyTrips: 4,
-      minDailyTrips: 2,
-      dailyTrips: [1, 2],
+      dailyTripsMinMaxCount: [0, 2],
       range: [new Date(), new Date()],
       includeWeekends: false,
     },
     time: {
-      start: new Date(),
-      end: new Date(),
-      startRandVar: 10,
-      startVar: [],
-      endRandVar: 10,
-      endVar: [],
+      firstTripTime: new Date(),
+      lastTripTime: new Date(),
+      firstTripVarianceMins: 10,
+      firstTripVarianceType: ['after'],
+      lastTripVarianceMins: 20,
+      lastTripVarianceType: ['before'],
     },
     drivers: [],
     vehicle: {
@@ -149,9 +147,9 @@ const fmtCapitalCase = (s: string) => capitalCase(s);
         <Slider
           class="FieldsetDates_Slider mb-3"
           inputId="TripsDayRange"
-          v-model="vehicleLogSettings.date.dailyTrips"
+          v-model="vehicleLogSettings.date.dailyTripsMinMaxCount"
           range
-          :min="1"
+          :min="0"
           :max="21"
         />
 
@@ -163,12 +161,12 @@ const fmtCapitalCase = (s: string) => capitalCase(s);
         </label>
         <InputNumber
           class="FieldsetDates_MinInput"
-          v-model="vehicleLogSettings.date.dailyTrips[0]"
+          v-model="vehicleLogSettings.date.dailyTripsMinMaxCount[0]"
           showButtons
           inputId="MinTripsDay"
           buttonLayout="horizontal"
-          :min="1"
-          :max="vehicleLogSettings.date.dailyTrips[1]"
+          :min="0"
+          :max="vehicleLogSettings.date.dailyTripsMinMaxCount[1]"
           :inputStyle="{maxWidth: '3rem'}"
         />
 
@@ -180,11 +178,11 @@ const fmtCapitalCase = (s: string) => capitalCase(s);
         </label>
         <InputNumber
           class="FieldsetDates_MaxInput"
-          v-model="vehicleLogSettings.date.dailyTrips[1]"
+          v-model="vehicleLogSettings.date.dailyTripsMinMaxCount[1]"
           showButtons
           inputId="MaxTripsDay"
           buttonLayout="horizontal"
-          :min="vehicleLogSettings.date.dailyTrips[0]"
+          :min="vehicleLogSettings.date.dailyTripsMinMaxCount[0]"
           :max="21"
           :inputStyle="{maxWidth: '3rem'}"
         />
@@ -206,8 +204,8 @@ const fmtCapitalCase = (s: string) => capitalCase(s);
     <Fieldset legend="Delivery Times" :pt="fieldsetContentPtGrid2Cols">
       <FloatLabel variant="on">
         <DatePicker
-          v-model="vehicleLogSettings.time.start"
-          inputId="on_label"
+          v-model="vehicleLogSettings.time.firstTripTime"
+          inputId="firstDT"
           showIcon
           iconDisplay="input"
           timeOnly
@@ -217,13 +215,13 @@ const fmtCapitalCase = (s: string) => capitalCase(s);
             <i class="pi pi-clock" />
           </template>
         </DatePicker>
-        <label for="on_label">First Delivery Time</label>
+        <label for="firstDT">First Delivery Time</label>
       </FloatLabel>
 
       <FloatLabel variant="on">
         <DatePicker
-          v-model="vehicleLogSettings.time.end"
-          inputId="on_label"
+          v-model="vehicleLogSettings.time.lastTripTime"
+          inputId="lastDT"
           showIcon
           iconDisplay="input"
           timeOnly
@@ -233,14 +231,14 @@ const fmtCapitalCase = (s: string) => capitalCase(s);
             <i class="pi pi-clock" />
           </template>
         </DatePicker>
-        <label for="on_label">Last Delivery Time</label>
+        <label for="lastDT">Last Delivery Time</label>
       </FloatLabel>
 
       <FloatLabel variant="over" class="mt-6">
         <label for="stRandom"> Start Time Variance</label>
         <InputGroup inputId="stRandom">
           <InputNumber
-            v-model="vehicleLogSettings.time.startRandVar"
+            v-model="vehicleLogSettings.time.firstTripVarianceMins"
             suffix=" mins"
             size="small"
             :min="0"
@@ -250,7 +248,7 @@ const fmtCapitalCase = (s: string) => capitalCase(s);
           />
           <InputGroupAddon class="p-0">
             <SelectButton
-              v-model="vehicleLogSettings.time.startVar"
+              v-model="vehicleLogSettings.time.firstTripVarianceType"
               :options="timeVarOpt"
               multiple
               size="small"
@@ -264,7 +262,7 @@ const fmtCapitalCase = (s: string) => capitalCase(s);
         <label for="stRandom"> Last Time Variance</label>
         <InputGroup inputId="stRandom">
           <InputNumber
-            v-model="vehicleLogSettings.time.endRandVar"
+            v-model="vehicleLogSettings.time.lastTripVarianceMins"
             suffix=" mins"
             size="small"
             :min="0"
@@ -274,7 +272,7 @@ const fmtCapitalCase = (s: string) => capitalCase(s);
           />
           <InputGroupAddon class="p-0">
             <SelectButton
-              v-model="vehicleLogSettings.time.endVar"
+              v-model="vehicleLogSettings.time.firstTripVarianceType"
               :options="timeVarOpt"
               multiple
               size="small"
@@ -333,9 +331,14 @@ const fmtCapitalCase = (s: string) => capitalCase(s);
           </div>
         </template>
 
-        <Column :field="p => `${p.name}`" header="Name" style="width: 70%;"> </Column>
+        <Column :field="p => `${p.name}`" header="Name" style="width: 70%">
+        </Column>
 
-        <Column field="randWeight" header="Probability" style="width: 4rem;"></Column>
+        <Column
+          field="randWeight"
+          header="Probability"
+          style="width: 4rem"
+        ></Column>
         <Column :exportable="false" style="min-width: 2rem">
           <template #body="slotProps">
             <Button
@@ -363,9 +366,17 @@ const fmtCapitalCase = (s: string) => capitalCase(s);
           </div>
         </template>
 
-        <Column :field="p => `${p.firstName} ${p.lastName}`" header="Name" style="min-width: 14rem; width: 70%;" >
+        <Column
+          :field="p => `${p.firstName} ${p.lastName}`"
+          header="Name"
+          style="min-width: 14rem; width: 70%"
+        >
         </Column>
-        <Column field="randWeight" header="Probability" style="width: 4rem;"></Column>
+        <Column
+          field="randWeight"
+          header="Probability"
+          style="width: 4rem"
+        ></Column>
         <Column :exportable="false" style="width: 2rem">
           <template #body="slotProps">
             <Button

@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import {computed, nextTick, onMounted, ref} from 'vue';
 import {
-  rand,
-  randBetweenDate,
   randBoolean,
   randNumber,
   randRecentDate,
@@ -22,19 +20,17 @@ import {useFakerUtils} from '../composables/useFakerUtils';
 const vehicleLogSettings = ref<VehicleLogSettings>({
   numberOfRecords: 10,
   date: {
-    maxDailyTrips: 5,
-    minDailyTrips: 1,
-    dailyTrips: [1, 2],
+    dailyTripsMinMaxCount: [0, 2],
     range: [randRecentDate({days: 10}), new Date()],
     includeWeekends: false,
   },
   time: {
-    start: new Date(),
-    end: new Date(),
-    startRandVar: 10,
-    startVar: ['after'],
-    endRandVar: 10,
-    endVar: ['after', 'before'],
+    firstTripTime: new Date(),
+    lastTripTime: new Date(),
+    firstTripVarianceMins: 10,
+    firstTripVarianceType: ['after'],
+    lastTripVarianceMins: 20,
+    lastTripVarianceType: ['after', 'before'],
   },
   drivers: [],
   vehicle: {

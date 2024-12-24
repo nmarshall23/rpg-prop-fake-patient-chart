@@ -18,19 +18,17 @@ type TimeVarianceType = 'before' | 'after'
 export interface VehicleLogSettings {
     numberOfRecords: number;
     date: {
-        dailyTrips: Array<number>
-        maxDailyTrips: number;
-        minDailyTrips: number;
+        dailyTripsMinMaxCount: Array<number>
         range: Array<Date>;
         includeWeekends: boolean;
     };
     time: {
-        start: Date
-        end: Date,
-        startRandVar: number
-        startVar: TimeVarianceType[]
-        endRandVar: number
-        endVar: TimeVarianceType[]
+        firstTripTime: Date
+        lastTripTime: Date,
+        firstTripVarianceMins: number
+        firstTripVarianceType: TimeVarianceType[]
+        lastTripVarianceMins: number
+        lastTripVarianceType: TimeVarianceType[]
     }
     drivers: Array<VehicleLogDriver>;
     vehicle: {
