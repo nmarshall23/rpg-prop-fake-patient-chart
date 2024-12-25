@@ -2,10 +2,7 @@
 import {computed, nextTick, onMounted, ref} from 'vue';
 import {
   randBoolean,
-  randNumber,
   randRecentDate,
-  randSequence,
-  randVehicle,
 } from '@ngneat/falso';
 import {isDefined, useToggle} from '@vueuse/core';
 import {useDownloadPDF} from '../composables/downloadPDF';
@@ -57,7 +54,7 @@ const {formatDateTime} = useFormatters();
 
 /* === RandGenFunc === */
 
-const {createStreetAddress, createDriver} = useFakerUtils();
+const {createStreetAddress, createDriver, randVehicleId } = useFakerUtils();
 
 const weightedDrivers = computed(() => {
   return vehicleLogSettings.value.drivers.map(v => ({
@@ -96,15 +93,12 @@ function genRandVehicleLogEntry(value: number): VehicleLogEntry {
 
 function genLogBookPage() {
   if (vehicleLogSettings.value.vehicle.description === '') {
-    vehicleLogSettings.value.vehicle.description = randVehicle();
+    vehicleLogSettings.value.vehicle.description = faker.vehicle.vehicle();
   }
 
   if (vehicleLogSettings.value.vehicle.id === '') {
-    const letters = randSequence({size: 2, chars: 'AZXTVHCW'});
-    const num = Intl.NumberFormat('en-US', {minimumIntegerDigits: 3}).format(
-      randNumber({min: 1, max: 20}),
-    );
-    vehicleLogSettings.value.vehicle.id = `${letters}-${num}`;
+    
+    vehicleLogSettings.value.vehicle.id = randVehicleId();
   }
 
   if (vehicleLogSettings.value.drivers.length === 0) {

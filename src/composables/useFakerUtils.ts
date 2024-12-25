@@ -28,8 +28,17 @@ function createDriver() {
     return d1
 }
 
-function randDateBetween() {
+function randVehicleId() {
+    const letters = faker.helpers.arrayElements('AZXTVHCW'.split(''), 3);
+    const num = Intl.NumberFormat('en-US', { minimumIntegerDigits: 3 }).format(
+        faker.number.int({ min: 1, max: 20 }),
+    );
+    return `${letters.join('')}-${num}`;
+}
 
+function randDateBetween(settings: VehicleLogSettings) {
+
+    // 
 }
 
 export function useFakerUtils() {
@@ -40,5 +49,6 @@ export function useFakerUtils() {
         createCompany,
         createStreetAddress,
         createDriver,
+        randVehicleId,
     }
 }
