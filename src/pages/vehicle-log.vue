@@ -1,41 +1,21 @@
 <script setup lang="ts">
-import {computed, nextTick, onMounted, ref} from 'vue';
-import {
-  randBoolean,
-  randRecentDate,
-} from '@ngneat/falso';
+import {nextTick, onMounted, ref} from 'vue';
+import {randBoolean} from '@ngneat/falso';
 import {isDefined, useToggle} from '@vueuse/core';
 import {useDownloadPDF} from '../composables/downloadPDF';
 import {PDFForm} from 'pdf-lib';
 import {useFillPdf} from '../composables/useFillPdf';
-import type {VehicleLogEntry, VehicleLogSettings} from '../vite-env.d.ts';
+import type {VehicleLogEntry} from '../vite-env.d.ts';
 import {faker} from '@faker-js/faker';
 import {useFormatters} from '../composables/useFormatters';
 import {useFakerUtils} from '../composables/useFakerUtils';
+import {useVLB_Settings} from '../composables/useVLB_Settings';
+import { Temporal } from '@js-temporal/polyfill';
 
 // === PAGE REFs === //
-const vehicleLogSettings = ref<VehicleLogSettings>({
-  numberOfRecords: 10,
-  date: {
-    dailyTripsMinMaxCount: [1, 2],
-    range: [randRecentDate({days: 10}), new Date()],
-    includeWeekends: false,
-  },
-  time: {
-    firstTripTime: new Date(),
-    lastTripTime: new Date(),
-    firstTripVarianceMins: 10,
-    firstTripVarianceType: ['after'],
-    lastTripVarianceMins: 20,
-    lastTripVarianceType: ['after', 'before'],
-  },
-  drivers: [],
-  vehicle: {
-    description: '',
-    id: '',
-  },
-  destinations: [],
-});
+
+const {vehicleLogSettings, weightedDestinations, weightedDrivers, fakeDates} =
+  useVLB_Settings();
 
 const vehicleLogTable = ref<Array<VehicleLogEntry>>([]);
 const pdfEmbed = ref<HTMLEmbedElement>();
@@ -54,29 +34,7 @@ const {formatDateTime} = useFormatters();
 
 /* === RandGenFunc === */
 
-const {createStreetAddress, createDriver, randVehicleId } = useFakerUtils();
-
-const weightedDrivers = computed(() => {
-  return vehicleLogSettings.value.drivers.map(v => ({
-    weight: v.randWeight,
-    value: `${v.firstName} ${v.lastName}`,
-  }));
-});
-
-const weightedDestinations = computed(() => {
-  return vehicleLogSettings.value.destinations.map(v => ({
-    weight: v.randWeight,
-    value: v.name,
-  }));
-});
-
-const fakeDates = computed(() => {
-  return faker.date.betweens({
-    from: vehicleLogSettings.value.date.range[0],
-    to: vehicleLogSettings.value.date.range[1],
-    count: vehicleLogSettings.value.numberOfRecords,
-  });
-});
+const {createStreetAddress, createDriver, randVehicleId} = useFakerUtils();
 
 function genRandVehicleLogEntry(value: number): VehicleLogEntry {
   return {
@@ -92,12 +50,18 @@ function genRandVehicleLogEntry(value: number): VehicleLogEntry {
 }
 
 function genLogBookPage() {
+  if (vehicleLogSettings.value.date.range.length === 0) {
+    vehicleLogSettings.value.date.range[0] = faker.date.recent({days: 10});
+    vehicleLogSettings.value.date.range[1] = new Date();
+
+    console.log('Date ', Temporal.Now.plainDateTimeISO().withPlainTime({ hour: 9, minute: 0}).toJSON())
+  }
+
   if (vehicleLogSettings.value.vehicle.description === '') {
     vehicleLogSettings.value.vehicle.description = faker.vehicle.vehicle();
   }
 
   if (vehicleLogSettings.value.vehicle.id === '') {
-    
     vehicleLogSettings.value.vehicle.id = randVehicleId();
   }
 
@@ -113,9 +77,15 @@ function genLogBookPage() {
     ];
   }
 
+  // const vlbEntries =
+
   vehicleLogTable.value = [
     ...Array(vehicleLogSettings.value.numberOfRecords).keys(),
-  ].map(v => genRandVehicleLogEntry(v));
+  ].reduce<Array<VehicleLogEntry>>((acc, idx) => {
+    const value = genRandVehicleLogEntry(idx);
+    acc.push(value);
+    return acc;
+  }, []);
 }
 
 /* === PDF Functions === */

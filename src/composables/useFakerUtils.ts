@@ -36,10 +36,6 @@ function randVehicleId() {
     return `${letters.join('')}-${num}`;
 }
 
-function randDateBetween(settings: VehicleLogSettings) {
-
-    // 
-}
 
 export function useFakerUtils() {
 

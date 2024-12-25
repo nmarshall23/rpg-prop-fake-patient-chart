@@ -10,7 +10,8 @@ interface VehicleLogDriver {
 interface VehicleLogDest {
     name: string
     randWeight: number
-
+    // min Trip Duration 
+    // Trip Variance Min
 }
 
 type TimeVarianceType = 'before' | 'after'
