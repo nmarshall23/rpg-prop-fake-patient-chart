@@ -17,7 +17,7 @@ import {useFakerUtils} from '../composables/useFakerUtils';
 const vehicleLogSettings = ref<VehicleLogSettings>({
   numberOfRecords: 10,
   date: {
-    dailyTripsMinMaxCount: [0, 2],
+    dailyTripsMinMaxCount: [1, 2],
     range: [randRecentDate({days: 10}), new Date()],
     includeWeekends: false,
   },

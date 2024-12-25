@@ -39,6 +39,7 @@ declare module 'vue' {
     Toast: typeof import('primevue/toast')['default']
     ToggleSwitch: typeof import('primevue/toggleswitch')['default']
     VLBDataTable: typeof import('./src/components/vehicleLog/VLB-DataTable.vue')['default']
+    VLBSettings_FieldDates: typeof import('./src/components/vehicleLog/VLB-Settings_FieldDates.vue')['default']
     VLBSettings_FieldDeliveryTimes: typeof import('./src/components/vehicleLog/VLB-Settings_FieldDeliveryTimes.vue')['default']
     VLBSettings_FieldDeliveryTImes: typeof import('./src/components/vehicleLog/VLB-Settings_FieldDeliveryTImes.vue')['default']
     VLBSettings_FieldDestinations: typeof import('./src/components/vehicleLog/VLB-Settings_FieldDestinations.vue')['default']

@@ -19,84 +19,7 @@ const emit = defineEmits<{
 
     <VLBSettings_FieldVehicleDsc v-model="vehicleLogSettings" />
 
-    <Fieldset legend="Vehicle Logbook - Dates">
-      <div class="FieldsetDates">
-        <label
-          for="DatesDriven"
-          class="FieldsetDates_PickerLabel font-bold block mb-2"
-        >
-          Dates Driven
-        </label>
-        <DatePicker
-          class="FieldsetDates_Picker"
-          inputId="DatesDriven"
-          v-model="vehicleLogSettings.date.range"
-          selectionMode="range"
-          :numberOfMonths="2"
-        />
-
-        <label
-          for="TripsDayRange"
-          class="FieldsetDates_SliderLabel font-bold block my-2"
-        >
-          Trips per Day
-        </label>
-        <Slider
-          class="FieldsetDates_Slider mb-3"
-          inputId="TripsDayRange"
-          v-model="vehicleLogSettings.date.dailyTripsMinMaxCount"
-          range
-          :min="0"
-          :max="21"
-        />
-
-        <label
-          for="MinTripsDay"
-          class="FieldsetDates_MinLabel font-bold block mb-2"
-        >
-          Min Trips per Day
-        </label>
-        <InputNumber
-          class="FieldsetDates_MinInput"
-          v-model="vehicleLogSettings.date.dailyTripsMinMaxCount[0]"
-          showButtons
-          inputId="MinTripsDay"
-          buttonLayout="horizontal"
-          :min="0"
-          :max="vehicleLogSettings.date.dailyTripsMinMaxCount[1]"
-          :inputStyle="{maxWidth: '3rem'}"
-        />
-
-        <label
-          for="MaxTripsDay"
-          class="FieldsetDates_MaxLabel font-bold block mb-2"
-        >
-          Max Trips per Day
-        </label>
-        <InputNumber
-          class="FieldsetDates_MaxInput"
-          v-model="vehicleLogSettings.date.dailyTripsMinMaxCount[1]"
-          showButtons
-          inputId="MaxTripsDay"
-          buttonLayout="horizontal"
-          :min="vehicleLogSettings.date.dailyTripsMinMaxCount[0]"
-          :max="21"
-          :inputStyle="{maxWidth: '3rem'}"
-        />
-
-        <label
-          for="includeWeekends"
-          class="FieldsetDates_WeekendLabel font-bold block my-2"
-        >
-          Include Weekends
-        </label>
-        <ToggleSwitch
-          class="FieldsetDates_WeekendSwitch"
-          inputId="includeWeekends"
-          v-model="vehicleLogSettings.date.includeWeekends"
-        />
-      </div>
-    </Fieldset>
+    <VLBSettings_FieldDates v-model="vehicleLogSettings" />
 
     <VLBSettings_FieldDeliveryTimes v-model="vehicleLogSettings" />
 
@@ -127,52 +50,8 @@ const emit = defineEmits<{
   grid-row: span 4;
 }
 
-.FieldsetDates {
-  display: grid;
-  grid-template-columns: 9rem 1fr 9rem;
-  grid-template-rows: repeat(8, min-content);
-  gap: 0 2rem;
-  grid-template-areas:
-    'PickerLabel . .'
-    'Picker Picker Picker'
-    'SliderLabel . .'
-    'Slider Slider Slider'
-    'MinLabel . MaxLabel'
-    'MinInput . MaxInput'
-    'WeekendLabel . . '
-    'WeekendSwitch . .';
-}
-.FieldsetDates_PickerLabel {
-  grid-area: PickerLabel;
-}
-.FieldsetDates_Picker {
-  grid-area: Picker;
-}
-.FieldsetDates_SliderLabel {
-  grid-area: SliderLabel;
-}
-.FieldsetDates_Slider {
-  grid-area: Slider;
-}
-.FieldsetDates_MinLabel {
-  grid-area: MinLabel;
-}
-.FieldsetDates_MinInput {
-  grid-area: MinInput;
-}
 
-.FieldsetDates_MaxLabel {
-  grid-area: MaxLabel;
-}
-.FieldsetDates_MaxInput {
-  grid-area: MaxInput;
-}
 
-.FieldsetDates_WeekendLabel {
-  grid-area: WeekendLabel;
-}
 
-.FieldsetDates_WeekendSwitch {
-  grid-area: WeekendSwitch;
-}
+
 </style>
