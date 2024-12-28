@@ -4,14 +4,34 @@ import {
   DataTablePassThroughOptions,
   DataTableRowReorderEvent,
 } from 'primevue';
-import {VehicleLogEntry} from '../../vite-env';
-import {ref} from 'vue';
+import {VehicleLogEntry, VehicleLogSettings} from '../../vite-env';
+import {computed, ref} from 'vue';
 import {useFormatters} from '../../composables/useFormatters';
 import {isDefined} from '@vueuse/core';
 
 const data = defineModel<Array<VehicleLogEntry>>({
   required: true,
   default: [],
+});
+
+const settings = defineModel<VehicleLogSettings>('settings', {required: true});
+
+const emit = defineEmits<{
+  regenerateLogBook: [];
+}>();
+
+/* ===  === */
+
+const dateRange = computed(() => {
+  const date1 = data.value[0]?.dateTime ?? new Date();
+  const date2 = data.value.at(-1)?.dateTime ?? new Date();
+  const fmt = new Intl.DateTimeFormat('en', {
+    year: '2-digit',
+    month: 'numeric',
+    day: 'numeric',
+  });
+
+  return fmt.formatRange(date1, date2);
 });
 
 /* === Table Functions === */
@@ -48,7 +68,21 @@ function deleteEntry(index: number) {
   const filteredList = data.value.filter((_v, i) => i != index);
 
   data.value = filteredList;
+  settings.value.numberOfRecords = filteredList.length
 }
+
+function addEntry() {
+  settings.value.numberOfRecords++;
+  data.value.push({
+    key: `${settings.value.numberOfRecords}`,
+    dateTime: new Date(),
+    refueled: false,
+    destinations: '',
+    driver: ''
+  })
+}
+
+const addEntryBtnDisabled= computed(() => settings.value.numberOfRecords === 21 || data.value.length === 21)
 
 /* === Formatting === */
 
@@ -63,6 +97,9 @@ const dataTablePt = ref<DataTablePassThroughOptions>({
       class: [{'py-0': state['d_editing']}],
     }),
   },
+  header: {
+    class: 'grid grid-cols-[max-content_1fr_max-content_max-content] gap-x-4',
+  },
 });
 </script>
 
@@ -75,6 +112,35 @@ const dataTablePt = ref<DataTablePassThroughOptions>({
     tableStyle="min-width: 50rem"
     :pt="dataTablePt"
   >
+    <template #header>
+      <span class="text-lg">
+        <span class="font-semibold text-nowrap">LogBook for Vehicle:</span>
+        {{ settings.vehicle.description }} -
+        {{ settings.vehicle.id }}
+      </span>
+      <span class="text-sm text-nowrap row-start-2">{{ dateRange }}</span>
+
+      <Button
+        icon="pi pi-plus"
+        rounded
+        raised
+        size="small"
+        label="New Row"
+        severity="success"
+        class="col-start-3"
+        @click="addEntry()"
+        :disabled="addEntryBtnDisabled"
+      />
+      <Button
+        icon="pi pi-refresh"
+        rounded
+        raised
+        size="small"
+        label="Regenerate Table"
+        @click="emit('regenerateLogBook')"
+      />
+    </template>
+
     <Column rowReorder headerStyle="width: 3rem" />
 
     <Column field="dateTime" header="Date / Time" style="width: 15rem">
@@ -119,16 +185,15 @@ const dataTablePt = ref<DataTablePassThroughOptions>({
     </Column>
 
     <Column :exportable="false" style="width: 2rem">
-        <template #body="slotProps">
-          <Button
-            icon="pi pi-trash"
-            outlined
-            rounded
-            severity="danger"
-            @click="deleteEntry(slotProps.index)"
-          />
-        </template>
-      </Column>
-
+      <template #body="slotProps">
+        <Button
+          icon="pi pi-trash"
+          outlined
+          rounded
+          severity="danger"
+          @click="deleteEntry(slotProps.index)"
+        />
+      </template>
+    </Column>
   </DataTable>
 </template>

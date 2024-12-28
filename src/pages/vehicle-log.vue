@@ -217,7 +217,7 @@ const previewBtnCmds = ref([
 
         <Button
           icon="pi pi-cog"
-          severity="Secondary"
+          severity="info"
           raised
           label="Setup"
           @click="toggleConfigVisible()"
@@ -226,11 +226,12 @@ const previewBtnCmds = ref([
     </template>
 
     <Divider />
-    <span class="pl-8"
-      >Vehicle Description: {{ vehicleLogSettings.vehicle.description }} - ID:
-      {{ vehicleLogSettings.vehicle.id }}
-    </span>
-    <VLB-DataTable v-model="vehicleLogTable" />
+
+    <VLB-DataTable
+      v-model="vehicleLogTable"
+      v-model:settings="vehicleLogSettings"
+      @regenerateLogBook="genLogBookPage"
+    />
   </Panel>
   <Drawer
     v-model:visible="isVisibleConfig"
@@ -250,19 +251,14 @@ const previewBtnCmds = ref([
     :breakpoints="{'1199px': '75vw', '575px': '90vw'}"
     :pt="{
       header: {
-        class: 'gap-4'
-      }
+        class: 'gap-4',
+      },
     }"
   >
     <template #header>
-        <span class="text-lg font-bold whitespace-nowrap">Preview PDF</span>
-        <span class="grow" />
-        <Button
-          icon="pi pi-download"
-          rounded
-          raised
-          @click="createDownload()"
-        />
+      <span class="text-lg font-bold whitespace-nowrap">Preview PDF</span>
+      <span class="grow" />
+      <Button icon="pi pi-download" rounded raised @click="createDownload()" />
     </template>
     <object
       ref="pdfEmbed"
