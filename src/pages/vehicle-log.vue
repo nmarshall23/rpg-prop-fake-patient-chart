@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {nextTick, onMounted, ref} from 'vue';
+import {computed, nextTick, onMounted, ref} from 'vue';
 import {randBoolean} from '@ngneat/falso';
 import {isDefined, useToggle} from '@vueuse/core';
 import {useDownloadPDF} from '../composables/downloadPDF';
@@ -10,7 +10,7 @@ import {faker} from '@faker-js/faker';
 import {useFormatters} from '../composables/useFormatters';
 import {useFakerUtils} from '../composables/useFakerUtils';
 import {useVLB_Settings} from '../composables/useVLB_Settings';
-import { Temporal } from '@js-temporal/polyfill';
+import {Temporal} from '@js-temporal/polyfill';
 
 // === PAGE REFs === //
 
@@ -22,6 +22,17 @@ const pdfEmbed = ref<HTMLEmbedElement>();
 const [isVisibleConfig, toggleConfigVisible] = useToggle();
 const [isVisiblePreview, togglePreviewVisible] = useToggle();
 
+const docTitle = computed(() => {
+  const date1 = vehicleLogTable.value[0]?.dateTime ?? new Date();
+  const date2 = vehicleLogTable.value.at(-1)?.dateTime ?? new Date();
+  const fmt = new Intl.DateTimeFormat('en', {
+    year: '2-digit',
+    month: 'numeric',
+    day: 'numeric',
+  });
+
+  return `LogBook ${vehicleLogSettings.value.vehicle.id} ${fmt.formatRange(date1, date2)}`;
+});
 /* === PAGE LIFECYCLE === */
 
 onMounted(() => {
@@ -54,7 +65,12 @@ function genLogBookPage() {
     vehicleLogSettings.value.date.range[0] = faker.date.recent({days: 10});
     vehicleLogSettings.value.date.range[1] = new Date();
 
-    console.log('Date ', Temporal.Now.plainDateTimeISO().withPlainTime({ hour: 9, minute: 0}).toJSON())
+    console.log(
+      'Date ',
+      Temporal.Now.plainDateTimeISO()
+        .withPlainTime({hour: 9, minute: 0})
+        .toJSON(),
+    );
   }
 
   if (vehicleLogSettings.value.vehicle.description === '') {
@@ -126,13 +142,21 @@ function fillFormFunc(form: PDFForm, data: Array<VehicleLogEntry>) {
 }
 
 const {createDownload} = useDownloadPDF<Array<VehicleLogEntry>>(
-  'VehicleLog',
+  docTitle,
   vehicleLogTable,
-  data => fillSinglePagePdfForm('/VehicleLog.pdf', true, data, fillFormFunc),
+  data =>
+    fillSinglePagePdfForm(
+      docTitle,
+      '/VehicleLog.pdf',
+      true,
+      data,
+      fillFormFunc,
+    ),
 );
 
 async function showPreviewDialog() {
   const pdfDataUri = await fillSinglePagePdfForm(
+    docTitle,
     '/VehicleLog.pdf',
     true,
     vehicleLogTable.value,
@@ -143,11 +167,25 @@ async function showPreviewDialog() {
 
   await nextTick();
   if (isDefined(pdfEmbed.value)) {
-    pdfEmbed.value.src = pdfDataUri;
+    const fileName = `LogBook - ${vehicleLogSettings.value.vehicle.id} - ${vehicleLogSettings.value.date.range[0].toDateString()}`;
 
-    console.info('Set PDF Embed');
+    const file_header = ';headers=filename%3D';
+
+    pdfEmbed.value.data = pdfDataUri.replace(
+      ';',
+      file_header + encodeURIComponent(docTitle.value) + ';',
+    );
+
+    console.info('Set PDF Embed %o', fileName);
   }
 }
+
+const previewBtnCmds = ref([
+  {
+    label: 'Download PDF',
+    command: () => createDownload(),
+  },
+]);
 </script>
 
 <template>
@@ -170,28 +208,16 @@ async function showPreviewDialog() {
     </template>
     <template #icons>
       <div class="flex items-center justify-between gap-4">
-        <Button
-          icon="pi pi-image"
-          severity="Secondary"
-          rounded
-          raised
+        <SplitButton
           label="Preview PDF"
           @click="showPreviewDialog()"
-        />
-
-        <Button
-          icon="pi pi-download"
-          severity="Secondary"
-          rounded
+          :model="previewBtnCmds"
           raised
-          label="Download PDF"
-          @click="createDownload()"
         />
 
         <Button
           icon="pi pi-cog"
           severity="Secondary"
-          rounded
           raised
           label="Setup"
           @click="toggleConfigVisible()"
@@ -220,10 +246,28 @@ async function showPreviewDialog() {
   <Dialog
     v-model:visible="isVisiblePreview"
     modal
-    header="Header"
     :style="{width: '70vw'}"
     :breakpoints="{'1199px': '75vw', '575px': '90vw'}"
+    :pt="{
+      header: {
+        class: 'gap-4'
+      }
+    }"
   >
-    <iframe ref="pdfEmbed" style="width: 100%; height: 400px"></iframe>
+    <template #header>
+        <span class="text-lg font-bold whitespace-nowrap">Preview PDF</span>
+        <span class="grow" />
+        <Button
+          icon="pi pi-download"
+          rounded
+          raised
+          @click="createDownload()"
+        />
+    </template>
+    <object
+      ref="pdfEmbed"
+      type="application/pdf"
+      style="width: 100%; height: 400px"
+    ></object>
   </Dialog>
 </template>

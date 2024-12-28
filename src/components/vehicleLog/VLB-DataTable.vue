@@ -44,6 +44,12 @@ const onFuelChanged = (e: Event) => {
   }
 };
 
+function deleteEntry(index: number) {
+  const filteredList = data.value.filter((_v, i) => i != index);
+
+  data.value = filteredList;
+}
+
 /* === Formatting === */
 
 const {formatDateTime} = useFormatters();
@@ -53,7 +59,7 @@ const {formatDateTime} = useFormatters();
 const dataTablePt = ref<DataTablePassThroughOptions>({
   table: {style: 'min-width: 50rem'},
   column: {
-    bodycell: ({state}) => ({
+    bodycell: ({state}: Record<string, Record<string, string>>) => ({
       class: [{'py-0': state['d_editing']}],
     }),
   },
@@ -111,5 +117,18 @@ const dataTablePt = ref<DataTablePassThroughOptions>({
         <InputText v-model="data[field]" autofocus />
       </template>
     </Column>
+
+    <Column :exportable="false" style="width: 2rem">
+        <template #body="slotProps">
+          <Button
+            icon="pi pi-trash"
+            outlined
+            rounded
+            severity="danger"
+            @click="deleteEntry(slotProps.index)"
+          />
+        </template>
+      </Column>
+
   </DataTable>
 </template>

@@ -32,7 +32,7 @@ const settings = defineModel<VehicleLogSettings>({required: true});
       v-model="settings.date.dailyTripsMinMaxCount"
       range
       :min="0"
-      :max="21"
+      :max="10"
     />
 
     <label
@@ -67,7 +67,7 @@ const settings = defineModel<VehicleLogSettings>({required: true});
       inputId="MaxTripsDay"
       buttonLayout="horizontal"
       :min="settings.date.dailyTripsMinMaxCount[0]"
-      :max="21"
+      :max="10"
       :inputStyle="{maxWidth: '3rem'}"
     />
 

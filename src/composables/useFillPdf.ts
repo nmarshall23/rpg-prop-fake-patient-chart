@@ -1,7 +1,8 @@
 import { PDFDocument, PDFForm } from "pdf-lib";
+import { MaybeRef, unref } from "vue";
 
 
-async function fillSinglePagePdfForm<T>(formUrl: string, debugFormFields: boolean, data: T, fillDataInFormFunc: (f:PDFForm, data: T) => void) {
+async function fillSinglePagePdfForm<T>(docTitle: MaybeRef<string>, formUrl: string, debugFormFields: boolean, data: T, fillDataInFormFunc: (f:PDFForm, data: T) => void) {
     const formPdfBytes = await fetch(formUrl).then(res => res.arrayBuffer());
     const pdfDoc = await PDFDocument.load(formPdfBytes);
 
@@ -12,6 +13,10 @@ async function fillSinglePagePdfForm<T>(formUrl: string, debugFormFields: boolea
     }
 
     fillDataInFormFunc(form, data);
+
+    
+    pdfDoc.setTitle(unref(docTitle))
+    
 
     const pdfDataUri = await pdfDoc.saveAsBase64({ dataUri: true });
 
