@@ -5,12 +5,13 @@ import {isDefined, useToggle} from '@vueuse/core';
 import {useDownloadPDF} from '../composables/downloadPDF';
 import {PDFForm} from 'pdf-lib';
 import {useFillPdf} from '../composables/useFillPdf';
-import type {VehicleLogEntry} from '../vite-env.d.ts';
+import type {VehicleLogEntry, VehicleLogSettings} from '../vite-env.d.ts';
 import {faker} from '@faker-js/faker';
 import {useFormatters} from '../composables/useFormatters';
 import {useFakerUtils} from '../composables/useFakerUtils';
 import {useVLB_Settings} from '../composables/useVLB_Settings';
 import {Temporal} from '@js-temporal/polyfill';
+import {match, P} from 'ts-pattern';
 
 // === PAGE REFs === //
 
@@ -18,7 +19,7 @@ const {vehicleLogSettings, weightedDestinations, weightedDrivers, fakeDates} =
   useVLB_Settings();
 
 const vehicleLogTable = ref<Array<VehicleLogEntry>>([]);
-const pdfEmbed = ref<HTMLEmbedElement>();
+const pdfEmbed = ref<HTMLObjectElement>();
 const [isVisibleConfig, toggleConfigVisible] = useToggle();
 const [isVisiblePreview, togglePreviewVisible] = useToggle();
 
@@ -47,30 +48,174 @@ const {formatDateTime} = useFormatters();
 
 const {createStreetAddress, createDriver, randVehicleId} = useFakerUtils();
 
-function genRandVehicleLogEntry(value: number): VehicleLogEntry {
-  return {
-    key: `${value}`,
-    dateTime: fakeDates.value[value],
+function fmtDate(date: Date) {
+  const numFmt = Intl.NumberFormat('en-US', {minimumIntegerDigits: 2});
+  return `${date.getFullYear()}-${numFmt.format(date.getMonth() + 1)}-${numFmt.format(date.getDate())}`;
+}
 
-    refueled: randBoolean(),
+function firstTripDate(settings: VehicleLogSettings, time: Temporal.PlainTime) {
+  const dateStr = fmtDate(settings.date.range[0]);
+
+  const p1date = Temporal.PlainDate.from(dateStr);
+  const newPDate = time.toPlainDateTime(p1date);
+
+  return new Date(newPDate.toString());
+}
+
+function randFirstTripDate(
+  settings: VehicleLogSettings,
+  time: Temporal.PlainTime,
+) {
+  const p1date = Temporal.PlainDate.from(fmtDate(settings.date.range[0]));
+  const p2date = Temporal.PlainDate.from(fmtDate(settings.date.range[1]));
+  const days = Math.round(p1date.until(p2date).days / 4);
+  const daysToAdd = faker.number.int(days);
+  const newPDate = time.toPlainDateTime(p1date.add({days: daysToAdd}));
+
+  return new Date(newPDate.toString());
+}
+
+function randTripDate(settings: VehicleLogSettings, time: Temporal.PlainTime) {
+
+  
+}
+
+function randFirstTripTime(settings: VehicleLogSettings) {
+  const time = new Intl.DateTimeFormat('en-US', {
+    timeStyle: 'medium',
+    hour12: false,
+  }).format(settings.time.firstTripTime);
+
+  const plainTime = Temporal.PlainTime.from(time);
+
+  const tripVar = match(settings.time.firstTripVarianceType)
+    .with([], () => undefined)
+    .otherwise(a => faker.helpers.arrayElement(a));
+
+  const minutes = faker.number.int(settings.time.firstTripVarianceMins);
+
+  const randTime = match(tripVar)
+    .with('before', () => {
+      return plainTime.add({minutes});
+    })
+    .with('after', () => {
+      return plainTime.subtract({minutes});
+    })
+    .otherwise(() => plainTime);
+
+  return randTime;
+}
+
+function genRandVehicleLogEntry(
+  value: number,
+  prevEntry: VehicleLogEntry | undefined,
+): VehicleLogEntry {
+  const entry: Partial<VehicleLogEntry> = {
+    key: `${value}`,
     destinations: faker.helpers.weightedArrayElement(
       weightedDestinations.value,
     ),
     driver: faker.helpers.weightedArrayElement(weightedDrivers.value),
+    refueled: false,
+    dateTime: undefined,
   };
+
+  return (
+    match([prevEntry, vehicleLogSettings.value])
+      // first Entry Random Date
+      .with(
+        [
+          P.nullish,
+          {
+            date: {
+              dailyTripsMinMaxCount: [0, P.number],
+            },
+          },
+        ],
+        ([_, settings]) => {
+          const time = randFirstTripTime(settings);
+          const date = randFirstTripDate(settings, time);
+          entry.dateTime = date;
+          entry.dailyTripCounter = 1;
+          return entry as VehicleLogEntry;
+        },
+      )
+      //
+      .with(
+        [
+          {
+            dailyTripCounter: P.number.lt(
+              vehicleLogSettings.value.date.dailyTripsMinMaxCount[1],
+            ),
+          },
+          {
+            date: {
+              dailyTripsMinMaxCount: [0, P.number],
+            },
+          },
+        ],
+        ([prevEntry, settings]) => {
+          // const time = randFirstTripTime(settings);
+          // const date = randFirstTripDate(settings, time);
+          // entry.dateTime = date;
+          entry.dailyTripCounter = prevEntry.dailyTripCounter + 1;
+          return entry as VehicleLogEntry;
+        },
+      )
+      // rand next day
+      .with(
+        [
+          {
+            dailyTripCounter: P.number.lte(
+              vehicleLogSettings.value.date.dailyTripsMinMaxCount[1],
+            ),
+          },
+          {
+            date: {
+              dailyTripsMinMaxCount: [0, P.number],
+            },
+          },
+        ],
+        ([_, settings]) => {
+          // const time = randFirstTripTime(settings);
+          // const date = randFirstTripDate(settings, time);
+          // entry.dateTime = date;
+          entry.dailyTripCounter = 1;
+          return entry as VehicleLogEntry;
+        },
+      )
+
+      // first Entry
+      .with(
+        [
+          P.nullish,
+          {
+            date: {
+              dailyTripsMinMaxCount: [P.number, P.number],
+            },
+          },
+        ],
+        ([_, settings]) => {
+          const time = randFirstTripTime(settings);
+          const date = firstTripDate(settings, time);
+          entry.dateTime = date;
+          entry.dailyTripCounter = 1;
+          return entry as VehicleLogEntry;
+        },
+      )
+      //
+      .otherwise(() => {
+        entry.refueled = faker.datatype.boolean(0.1);
+        entry.dateTime = fakeDates.value[value];
+        return entry as VehicleLogEntry;
+      })
+  );
 }
 
 function genLogBookPage() {
   if (vehicleLogSettings.value.date.range.length === 0) {
     vehicleLogSettings.value.date.range[0] = faker.date.recent({days: 10});
     vehicleLogSettings.value.date.range[1] = new Date();
-
-    console.log(
-      'Date ',
-      Temporal.Now.plainDateTimeISO()
-        .withPlainTime({hour: 9, minute: 0})
-        .toJSON(),
-    );
   }
 
   if (vehicleLogSettings.value.vehicle.description === '') {
@@ -98,7 +243,9 @@ function genLogBookPage() {
   vehicleLogTable.value = [
     ...Array(vehicleLogSettings.value.numberOfRecords).keys(),
   ].reduce<Array<VehicleLogEntry>>((acc, idx) => {
-    const value = genRandVehicleLogEntry(idx);
+    const prevEntry = acc[idx - 1];
+
+    const value = genRandVehicleLogEntry(idx, prevEntry);
     acc.push(value);
     return acc;
   }, []);

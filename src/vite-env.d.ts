@@ -45,4 +45,5 @@ export interface VehicleLogEntry {
     refueled: boolean
     destinations: string
     driver: string
+    dailyTripCounter?: number
 }
