@@ -84,6 +84,7 @@ app
         theme: {
             preset: themePreset,
             options: {
+                darkModeSelector: false,
                 cssLayer: {
                     name: 'primevue',
                     order: 'tailwind-base, primevue, tailwind-utilities'

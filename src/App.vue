@@ -1,20 +1,39 @@
 <script setup lang="ts">
-import {ref} from 'vue';
+import { computedAsync } from '@vueuse/core';
+import { MenuItem } from 'primevue/menuitem';
+import { ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 
-const mainMenu = ref([
+const route = useRoute()
+
+watch(
+  () => route.path,
+  async (pathNew, pathOld) => {
+    console.log('pathNew %o | pathOld %o', pathNew, pathOld)
+  }
+)
+
+function createMenuItem(label: string, routeName: string) {
+
+  return {
+    label,
+    route: { name: routeName },
+    isActive: computedAsync(async () => route.name === routeName, false)
+  }
+}
+
+const mainMenu = ref<MenuItem[]>([
   {
     label: 'Props',
     items: [
-      {
-        label: 'Medical Incident Report',
-      },
-      {
-        label: 'Vehicle Log',
-        route: {name: '/vehicle-log'},
-      },
+      createMenuItem('Vehicle Logbook', '/vehicle-log'),
+      createMenuItem('Your Suggestions', '/suggest-a-pdf'),
     ],
   },
+
 ]);
+
+
 </script>
 
 <template>
@@ -24,38 +43,23 @@ const mainMenu = ref([
    -->
 
   <div class="appWrapper">
-    <Card
-      class="appNav bg-gradient-to-b from-stone-300 from-50% to-cyan-700 to-80%"
-    >
+    <Card class="appNav bg-gradient-to-b from-stone-300 from-50% to-cyan-700 to-80%">
       <template #header>
         <span class="inline-flex items-center gap-1 px-2 py-2">
-          <img
-            alt="Vue logo"
-            class="logo"
-            src="@/assets/vue.svg"
-            width="32"
-            height="32"
-          />
-          <span class="text-xl font-semibold"
-            >RPG Prop<span class="text-primary text-sky-700">Maker</span></span
-          >
+          <img alt="Vue logo" class="logo" src="@/assets/vue.svg" width="32" height="32" />
+          <span class="text-xl font-semibold">RPG Prop<span class="text-primary text-sky-700">Maker</span></span>
         </span>
       </template>
       <template #content>
-        <Menu :model="mainMenu" class="bg-transparent border-0">
-          <template #submenulabel="{item}">
-            <span class="text-primary text-sky-700 font-bold">{{
-              item.label
-            }}</span>
-          </template>
-          <template #item="{item, props}">
-            <router-link
-              v-if="item.route"
-              v-slot="{href, navigate}"
-              :to="item.route"
-              custom
-            >
-              <a v-ripple :href="href" v-bind="props.action" @click="navigate">
+        <Menu :model="mainMenu" class="bg-transparent border-0" :pt="{
+          submenuLabel: {
+            class: 'font-bold text-sky-700'
+          },
+        }">
+
+          <template #item="{ item, props }">
+            <router-link v-if="item.route" v-slot="{ isActive, href, navigate }" :to="item.route" custom>
+              <a v-ripple :href="href" v-bind="props.action" @click="navigate" :class="isActive ? 'active-link' : ''">
                 <span :class="item.icon" />
                 <span class="ml-2">{{ item.label }}</span>
               </a>
@@ -96,6 +100,7 @@ const mainMenu = ref([
 .appNav:deep(.p-card-body) {
   padding: 4px;
 }
+
 .appContent {
   grid-area: appContent;
 }
@@ -104,4 +109,9 @@ const mainMenu = ref([
   grid-area: appFooter;
   align-self: start;
 }
+
+.active-link {
+  background-color: rgb(229 231 235 / var(--tw-bg-opacity, 1));
+}
 </style>
+color

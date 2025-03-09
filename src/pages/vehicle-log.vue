@@ -353,6 +353,7 @@ const previewBtnCmds = ref([
         Page
       </span>
     </template>
+    
     <template #icons>
       <div class="flex items-center justify-between gap-4">
         <SplitButton
